@@ -4,7 +4,7 @@
             <div class="icon" :class="iconClass"></div>
         </div>
         <label class="downloader__label">
-            <input type="file" @change="upload($event.target.files)"/>
+            <input type="file" :disabled="disabled"  @change="upload($event.target.files)"/>
             <div class="downloader__text">
                 <span :class="{ decoration }">{{ text }}</span>
                 <span class="ghost__text">{{ fileInfo }}</span>
@@ -15,7 +15,6 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from "vuex"
 import { 
     DEFAULT_TEXT, 
     DOWNLOAD_TEXT, 
@@ -34,12 +33,14 @@ export default {
     data() {
         return {
             decoration: true,
+            icon: DOWNLOAD_ICON,
+            text: DEFAULT_TEXT,
+            status: '',
+            fileInfo: SIZE_TEXT,
+            disabled: false
         }
     },
     methods: {
-        ...mapActions([
-            'set'
-        ]),
         getStatus() {
             let statuses = [ SUCCESS_STATUS, ERROR_STATUS ];
             let randomIndex = Math.round(Math.random());
@@ -59,10 +60,11 @@ export default {
         },
         setArray(array) {
             array.map(item => {
-                this.set(item);
+                this[item.field] = item.value;
             });
         },
         downloading() {
+            this.disabled = true;
             let options = [
                 { field: 'icon', value: DOWNLOAD_ICON },
                 { field: 'status', value: '' },
@@ -73,7 +75,7 @@ export default {
         },
         loading() {
             this.decoration = false;
-            this.set({ field: 'icon', value: PRELOADER_ICON });
+            this.icon = PRELOADER_ICON;
         },
         wait(file) {
             let options = [
@@ -90,6 +92,7 @@ export default {
                 { field: 'icon', value: SUCCESS_ICON }
             ];
             this.setArray(options);
+            this.disabled = false;
         },
         error() {
             this.decoration = true;
@@ -99,6 +102,7 @@ export default {
                 { field: 'fileInfo', value: SIZE_TEXT }
             ];
             this.setArray(options);
+            this.disabled = false;
         },
         validSizeFile(size) {
             if(size / 1024 / 1024 > 5) return false;
@@ -112,23 +116,23 @@ export default {
                 await this.timeout(2000);
                 this.wait(file);
                 await this.timeout(2000);
-                this.set({ field: 'status', value: this.getStatus() });
+                this.status = this.getStatus();
                 if(this.status.text == SUCCESS_STATUS.text) this.success();
                 else this.error();
             }
             else {
-                this.set({ field: 'status', value: ERROR_STATUS });
+                this.status = ERROR_STATUS;
                 this.error();
             }
         }
     },
     computed: {
-        ...mapGetters([
-            'icon',
-            'text',
-            'status',
-            'fileInfo'
-        ]),
+        // ...mapGetters([
+        //     'icon',
+        //     'text',
+        //     'status',
+        //     'fileInfo'
+        // ]),
         iconClass() {
             let result = {};
             result[this.icon] = true;
